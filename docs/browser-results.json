@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "edge-extension",
+    "version": "154.0.4258.37",
+    "viewports": [
+      "1280x900",
+      "390x844"
+    ],
+    "result": "PASS",
+    "liveInstagram": false
+  },
+  {
+    "mode": "edge-script",
+    "version": "154.0.4258.37",
+    "viewports": [
+      "1280x900",
+      "390x844"
+    ],
+    "result": "PASS",
+    "liveInstagram": false
+  }
+]

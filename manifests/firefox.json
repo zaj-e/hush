@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Hush", "version": "0.1.4",
+  "description": "Quiets Instagram on the web: hides Reels, Explore and suggested posts, keeps your friends' posts, DMs and stories. Fully local.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "hush@local.invalid", "strict_min_version": "140.0",
+      "data_collection_permissions": { "required": ["none"] }
+    },
+    "gecko_android": { "strict_min_version": "142.0" }
+  },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "content_scripts": [{
+    "matches": ["https://www.instagram.com/*", "https://instagram.com/*", "https://m.instagram.com/*"],
+    "js": ["policy.js", "content.js"], "css": ["content.css"], "run_at": "document_start"
+  }]
+}

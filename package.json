@@ -1,0 +1,25 @@
+{
+  "name": "hush",
+  "version": "0.1.4",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "description": "Hush quiets Instagram on the web: it hides Reels, Explore and suggested posts while keeping friends' posts, DMs, stories and profiles. Runs locally with no tracking.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test --test-isolation=none --test-timeout=15000 tests/*.test.mjs",
+    "test:browser": "node scripts/browser-test.mjs",
+    "test:scroll": "node scripts/scroll-test.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "verify:edge": "npm run build && npm test && npm run lint:firefox && npm run test:scroll && npm run test:smoke && node scripts/browser-test.mjs edge-extension",
+    "lint:firefox": "addons-linter dist/firefox --warnings-as-errors"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "devDependencies": {
+    "addons-linter": "10.14.0",
+    "fflate": "0.8.3",
+    "jsdom": "29.1.1",
+    "playwright": "1.64.0"
+  }
+}

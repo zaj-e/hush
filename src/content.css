@@ -1,0 +1,27 @@
+[data-hush-hidden]:not([data-hush-hidden="post"]) { display: none !important; }
+/* Keep an observable zero-height box. display:none prevents a site's
+   IntersectionObserver from seeing a filtered post used as a loading trigger. */
+[data-hush-hidden="post"] {
+  display: block !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  flex: 0 0 0 !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+  margin: calc(-1 * var(--hush-row-gap, 0px)) 0 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+[data-hush-hidden="post"], [data-hush-hidden="post"] * { visibility: hidden !important; }
+/* Search (/explore/) keeps its search bar; the recommended post grid is removed. */
+html[data-hush-search] main a[href*="/p/"],
+html[data-hush-search] main a[href*="/reel/"],
+html[data-hush-search] main a[href*="/reels/"],
+/* With the grid gone the infinite-scroll loader stays in view and spins forever. */
+html[data-hush-search] main [role="progressbar"],
+html[data-hush-search] main svg[aria-label="Loading..."],
+html[data-hush-search] main svg[aria-label="Cargando..."] { display: none !important; }
+html[data-hush-blocked] { overflow: hidden !important; }
+html[data-hush-blocked] body > :not(#hush-controls) { display: none !important; }
+#hush-controls { display: block !important; }

@@ -1,0 +1,26 @@
+# Selector and navigation contract
+
+All Instagram-specific DOM assumptions here are **provisional**. A user-provided post HTML sample was inspected and sanitized into a regression fixture. Other fixtures are small semantic examples; a logged-in Edge feed was also inspected on 2026-10-11. Updated runtime behavior has not yet been verified in that live tab.
+
+| Area | Implementation | Failure behavior |
+| --- | --- | --- |
+| Routes | HTTPS exact Instagram hosts; first decoded segment `explore`, `reel`, `reels`; or `/<author-or-share>/reel[s]/<id>` | All descendants blocked; route aliases outside this set may escape |
+| Entry links | Blocked URL in `nav`, `role=navigation`, `aside`, or outside main/article/dialog (last fallback disabled in DMs) | Unknown button-only entry points may remain visible; destination route still blocked |
+| Home | URL pathname `/`, including query variants | Profiles, DMs, stories, dialogs excluded |
+| Feed item | `article` inside `main` or `role=main` | Nonsemantic layout preserved, recommendations may remain |
+| Recommendation | Plain leaf `span`/`div` inside an article-owned `header` or a recognized leading div author row, exactly `Suggested for you`, `Sugerencias para ti`, or `Sugerido para ti`; Follow is optional, and an explicit `Following`/`Siguiendo` control preserves the post | Follow/Seguir also classifies a recognized div author row without a label; unsupported layouts/locales preserved |
+| Repost exemption | Header label `Reposted by`, `reposted`, `Reposted`, `Republicado por`, `republicó`; or a short header attribution row containing an anchor and ending in `reposted`/`republicó` | Recognized repost overrides recommendation classification; other markup requires live verification |
+| Search | Native Search at `/explore/` is allowed; Hush hides the post grid and its loading spinner | None |
+
+For the observed div layout, descend only through the first-element-child branch of the article. A candidate author row must have one or more linked avatar images, a profile URL, and a button that opens a dialog, with no video/audio, section, nested article or dialog. Recommendation and Following checks and repost exemptions remain scoped to that row. The outer feed item must still be an `article`; the supplied HTML did not include its enclosing ancestors. Other nonsemantic feed containers remain unsupported.
+
+No substring search across posts, conversations, or the full document. Linked names, headings, and button text cannot masquerade as the recommendation label. A semantic header inside a comment in a future layout is a residual risk: validate header ownership on live markup before claiming compatibility. A repost label absent from the DOM cannot be recognized. Follow controls outside the recognized div author row do not classify an unknown post. No following graph is fetched.
+
+The content script runs at document start in the default isolated world. It never patches page JavaScript or uses Instagram internal data structures. Capturing click/auxclick listeners cancel blocked anchors; a URL-only watchdog covers silent `pushState` and `replaceState`, while `popstate`, `hashchange`, `pageshow`, visibility and DOM mutations trigger checks. A blocked page keeps its URL/history and displays a local panel. All DOM-inserted video/audio is paused while blocked; play events also pause it. Choosing Home/Messages/profile intentionally navigates normally.
+
+MutationObserver watches children, text and `href`, not the extension's own hiding attributes. A 50 ms batch deduplicates ancestor roots; large bursts collapse to one document scan. Unchanged URL watchdog ticks do not scan the DOM. Body replacement remounts controls. Pagehide stops the watchdog; pageshow resumes it. Removed content is not copied anywhere.
+
+Shared-Reel policy is deliberately uniform: no origin exceptions, bypass query parameter, URL rewriting to `/p/`, hidden media extraction, or player cloning. Native previews already playable inside a DM remain untouched. Clicking a standalone Reel link stays on the current page and shows an explanation; direct navigation shows the blocked-page panel. This sacrifices standalone shared video playback to avoid making an unverified single-Reel isolation promise.
+
+
+Feed posts use `data-hush-hidden="post"` and a clipped, invisible zero-height box, leaving no post-height slot while remaining observable by ordinary IntersectionObserver. Pixel row gaps in column flex parents are canceled on hidden items. Other parent layouts may need additional live examples. A WeakMap retains decisions while the same article unloads its label/header. Changed nonempty post permalinks or author identities reset the decision; explicit Following or repost attribution overrides it. Up to 500 recognized post IDs are remembered in memory for replacement elements, never persisted or transmitted. Without a permalink, reuse for a different post by the same author cannot always be distinguished from unloaded content and may retain a previous hiding decision. Initially unknown posts remain visible. `npm run test:scroll` uses the same collapsing CSS with stateless and stateful classification: the former reproduces a collapse/restore loop, while the latter leaves no gap and keeps scroll position stable after the initial collapse.
