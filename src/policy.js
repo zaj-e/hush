@@ -54,6 +54,10 @@
     return '/' + name + '/';
   }
   function text(node) { return node.textContent.replace(/\s+/g, ' ').trim(); }
+  function linkUrl(a) { return urlOf(a.getAttribute('href')); }
+  // A link straight to a profile such as /alice/, not to a post or another route.
+  function isProfileUrl(url) { return !!url && profilePath(parts(url).join('/')) === url.pathname; }
+  function buttons(root) { return [...root.querySelectorAll('button,[role="button"]')]; }
   function leaves(header) {
     // Exact header labels only, never caption/comment text or linked names.
     return [...header.querySelectorAll('span,div')].filter(n => !n.children.length && !n.closest('a,button,[role="button"],h1,h2,h3'));
@@ -68,10 +72,7 @@
       const images = [...row.querySelectorAll('img')];
       // Collaborative posts have multiple author avatars and may omit Follow.
       const avatarOnly = images.length > 0 && images.every(image => image.closest('a,[role="link"]'));
-      const author = [...row.querySelectorAll('a[href]')].some(a => {
-        const url = urlOf(a.getAttribute('href'));
-        return url && profilePath(parts(url).join('/')) === url.pathname;
-      });
+      const author = [...row.querySelectorAll('a[href]')].some(a => isProfileUrl(linkUrl(a)));
       if (avatarOnly && author && row.querySelector('[role="button"][aria-haspopup="dialog"],button[aria-haspopup="dialog"]') &&
           !row.querySelector('video,audio,section,article,[role="dialog"]')) return [row];
     }
@@ -82,7 +83,7 @@
     if (!headers.length) return PostState.UNKNOWN; // Unknown is not evidence to reverse a decision.
     for (const header of headers) {
       if (leaves(header).some(n => REPOST.has(text(n)))) return PostState.PRESERVED;
-      if ([...header.querySelectorAll('button,[role="button"]')].some(n => FOLLOWING.has(text(n)))) return PostState.PRESERVED;
+      if (buttons(header).some(n => FOLLOWING.has(text(n)))) return PostState.PRESERVED;
       if ([...header.querySelectorAll('a[href]')].some(a => {
         const row = a.parentElement;
         return row && row.textContent.length < 100 && /(?:\breposted|\brepublicó)\s*$/u.test(text(row));
@@ -91,16 +92,19 @@
     // The verified div author row can omit the suggestion label (video overlays).
     // Do not infer this from a Follow control elsewhere in a post or caption.
     return headers.some(header => leaves(header).some(n => SUGGESTED.has(text(n))) ||
-      (header.matches('div') && [...header.querySelectorAll('button,[role="button"]')].some(n => FOLLOW.has(text(n)))))
+      (header.matches('div') && buttons(header).some(n => FOLLOW.has(text(n)))))
       ? PostState.SUGGESTED : PostState.UNKNOWN;
   }
   function postIdentity(article) {
-    const links = [...article.querySelectorAll('a[href]')].filter(a => a.closest('article') === article);
-    const post = links.map(a => urlOf(a.getAttribute('href'))).filter(Boolean)
-      .map(url => url.pathname.match(/\/(?:p|reel)\/([^/]+)\/?$/)?.[1]).find(Boolean) || '';
-    const authors = [...new Set(postHeaders(article).flatMap(header => [...header.querySelectorAll('a[href]')])
-      .map(a => urlOf(a.getAttribute('href'))).filter(url => url && profilePath(parts(url).join('/')) === url.pathname)
-      .map(url => url.pathname.toLowerCase()))].sort().join('|');
+    // post: the first /p/ or /reel/ permalink id owned by this article.
+    const ownLinks = [...article.querySelectorAll('a[href]')].filter(a => a.closest('article') === article);
+    const permalinkIds = ownLinks.map(linkUrl).filter(Boolean)
+      .map(url => url.pathname.match(/\/(?:p|reel)\/([^/]+)\/?$/)?.[1]);
+    const post = permalinkIds.find(Boolean) || '';
+    // authors: the sorted, deduplicated profile paths linked from the header.
+    const headerLinks = postHeaders(article).flatMap(header => [...header.querySelectorAll('a[href]')]);
+    const profilePaths = headerLinks.map(linkUrl).filter(isProfileUrl).map(url => url.pathname.toLowerCase());
+    const authors = [...new Set(profilePaths)].sort().join('|');
     return { post, authors };
   }
   function suggested(article) { return suggestionState(article) === PostState.SUGGESTED; }
