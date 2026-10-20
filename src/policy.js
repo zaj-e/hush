@@ -62,6 +62,26 @@
     // Exact header labels only, never caption/comment text or linked names.
     return [...header.querySelectorAll('span,div')].filter(n => !n.children.length && !n.closest('a,button,[role="button"],h1,h2,h3'));
   }
+  function hasLabel(header, labels) { return leaves(header).some(n => labels.has(text(n))); }
+  function hasButton(header, labels) { return buttons(header).some(n => labels.has(text(n))); }
+  // A short "<name> reposted" line around a link, not a long caption that
+  // happens to end with "reposted".
+  function hasRepostLine(header) {
+    return [...header.querySelectorAll('a[href]')].some(a => {
+      const row = a.parentElement;
+      return row && row.textContent.length < 100 && /(?:\breposted|\brepublicó)\s*$/u.test(text(row));
+    });
+  }
+  // The div layout's author row: only linked avatars, a profile link and an
+  // options menu, with no media or nested post content.
+  function isAuthorRow(row) {
+    const images = [...row.querySelectorAll('img')];
+    // Collaborative posts have multiple author avatars and may omit Follow.
+    const avatarOnly = images.length > 0 && images.every(image => image.closest('a,[role="link"]'));
+    const author = [...row.querySelectorAll('a[href]')].some(a => isProfileUrl(linkUrl(a)));
+    return avatarOnly && author && !!row.querySelector('[role="button"][aria-haspopup="dialog"],button[aria-haspopup="dialog"]') &&
+      !row.querySelector('video,audio,section,article,[role="dialog"]');
+  }
   function postHeaders(article) {
     const headers = [...article.querySelectorAll('header')].filter(h => h.closest('article') === article && !h.closest('[role="dialog"]'));
     if (headers.length || article.closest('[role="dialog"]')) return headers;
@@ -69,12 +89,7 @@
     // Descend only through that leading branch, never search arbitrary post text.
     for (let row = article.firstElementChild; row; row = row.firstElementChild) {
       if (!row.matches('div') || row.closest('article') !== article || row.closest('[role="dialog"]')) break;
-      const images = [...row.querySelectorAll('img')];
-      // Collaborative posts have multiple author avatars and may omit Follow.
-      const avatarOnly = images.length > 0 && images.every(image => image.closest('a,[role="link"]'));
-      const author = [...row.querySelectorAll('a[href]')].some(a => isProfileUrl(linkUrl(a)));
-      if (avatarOnly && author && row.querySelector('[role="button"][aria-haspopup="dialog"],button[aria-haspopup="dialog"]') &&
-          !row.querySelector('video,audio,section,article,[role="dialog"]')) return [row];
+      if (isAuthorRow(row)) return [row];
     }
     return [];
   }
@@ -82,17 +97,12 @@
     const headers = postHeaders(article);
     if (!headers.length) return PostState.UNKNOWN; // Unknown is not evidence to reverse a decision.
     for (const header of headers) {
-      if (leaves(header).some(n => REPOST.has(text(n)))) return PostState.PRESERVED;
-      if (buttons(header).some(n => FOLLOWING.has(text(n)))) return PostState.PRESERVED;
-      if ([...header.querySelectorAll('a[href]')].some(a => {
-        const row = a.parentElement;
-        return row && row.textContent.length < 100 && /(?:\breposted|\brepublicó)\s*$/u.test(text(row));
-      })) return PostState.PRESERVED;
+      if (hasLabel(header, REPOST) || hasButton(header, FOLLOWING) || hasRepostLine(header)) return PostState.PRESERVED;
     }
     // The verified div author row can omit the suggestion label (video overlays).
     // Do not infer this from a Follow control elsewhere in a post or caption.
-    return headers.some(header => leaves(header).some(n => SUGGESTED.has(text(n))) ||
-      (header.matches('div') && buttons(header).some(n => FOLLOW.has(text(n)))))
+    const followOnlyRow = header => header.matches('div') && hasButton(header, FOLLOW);
+    return headers.some(header => hasLabel(header, SUGGESTED) || followOnlyRow(header))
       ? PostState.SUGGESTED : PostState.UNKNOWN;
   }
   function postIdentity(article) {
