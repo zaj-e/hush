@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Hush", "version": "0.1.4",
+  "name": "Hush", "version": "0.1.5",
   "description": "Quiets Instagram on the web: hides Reels, Explore and suggested posts, keeps your friends' posts, DMs and stories. Fully local.",
   "browser_specific_settings": {
     "gecko": {
