@@ -106,49 +106,6 @@
     shadow = ui.attachShadow({ mode: 'open' });
     // Static extension-owned markup; no site data is inserted as HTML.
     shadow.innerHTML = `
-      <style>
-        :host { all: initial; font: 14px system-ui,sans-serif; color: #182026; }
-        * { box-sizing: border-box; }
-        .card { background: #fff; color: #1d2328; border: 1px solid #cfd6dc; border-radius: 16px; padding: 16px 18px; box-shadow: 0 8px 28px #0003; }
-        .tools { position: fixed; right: 12px; bottom: max(80px, env(safe-area-inset-bottom)); z-index: 2147483647; width: 340px; max-width: calc(100vw - 24px); }
-        .tools p { margin: 0; line-height: 1.5; color: #5b6770; }
-        .tools .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-        .tools button { font: inherit; cursor: pointer; padding: 8px 16px; border-radius: 999px; border: 1px solid #cfd6dc; background: transparent; color: #1d2328; transition: background .15s; }
-        .tools button:hover { background: #eef1f4; }
-        .tools button:focus-visible { outline: 2px solid #075a9c; outline-offset: 2px; }
-        .tools .allow-link { background: #1d2328; border-color: #1d2328; color: #fff; }
-        .tools .allow-link:hover { background: #333c44; }
-        button, a { font: inherit; }
-        button { cursor: pointer; padding: 8px; }
-        a { color: #075a9c; padding: 8px; display: inline-block; }
-        @media (prefers-color-scheme: dark) {
-          .card { background: #1c2227; color: #e8ecef; border-color: #323b42; box-shadow: 0 8px 28px #0008; }
-          .tools p { color: #9aa6af; }
-          .tools button { border-color: #323b42; color: #e8ecef; } .tools button:hover { background: #262e34; }
-          .tools .allow-link { background: #e8ecef; border-color: #e8ecef; color: #0f1316; } .tools .allow-link:hover { background: #fff; }
-        }
-        .blocked { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 24px; overflow: auto; color: #1d2328;
-          background: radial-gradient(ellipse at 50% 35%, #fff 0%, #eef1f4 70%); }
-        .hush { max-width: 360px; text-align: center; }
-        .hush svg { width: 72px; height: 72px; color: #6b7882; margin-bottom: 20px; }
-        .hush h1 { margin: 0 0 10px; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
-        .hush p { margin: 0 auto; color: #5b6770; line-height: 1.6; }
-        .hush .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
-        .hush .pill { padding: 9px 20px; border-radius: 999px; border: 1px solid #cfd6dc; background: transparent; color: #1d2328; text-decoration: none; transition: background .15s; }
-        .hush .pill:hover { background: #fff; }
-        .hush .pill:focus-visible, .hush button:focus-visible { outline: 2px solid #075a9c; outline-offset: 2px; }
-        .hush .primary { background: #1d2328; border-color: #1d2328; color: #fff; }
-        .hush .primary:hover { background: #333c44; }
-        .hush .hint { margin-top: 22px; font-size: 12px; color: #8b97a0; }
-        @media (prefers-color-scheme: dark) {
-          .blocked { color: #e8ecef; background: radial-gradient(ellipse at 50% 35%, #1c2227 0%, #0f1316 70%); }
-          .hush svg { color: #8b97a0; } .hush p { color: #9aa6af; } .hush .hint { color: #6b7882; }
-          .hush .pill { border-color: #323b42; color: #e8ecef; } .hush .pill:hover { background: #1c2227; }
-          .hush .primary { background: #e8ecef; border-color: #e8ecef; color: #0f1316; } .hush .primary:hover { background: #fff; }
-        }
-        @media (prefers-reduced-motion: reduce) { .hush .pill { transition: none; } }
-        [hidden] { display: none !important; }
-      </style>
       <section class="blocked" hidden aria-label="Blocked Instagram page">
         <div class="hush">
           <svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -173,6 +130,9 @@
           <button type="button" class="dismiss">Dismiss</button>
         </div>
       </div>`;
+    const style = document.createElement('style');
+    style.textContent = controlsStyles();
+    shadow.prepend(style);
     notice = shadow.querySelector('[role="status"]');
     shadow.querySelector('.allow-page').addEventListener('click', () => {
       const key = policy.reelKey(location.href);
@@ -289,5 +249,51 @@
   checkRoute();
   schedule(document.documentElement);
   resume();
+  // Set as text, never parsed as HTML.
+  function controlsStyles() {
+    return `
+        :host { all: initial; font: 14px system-ui,sans-serif; color: #182026; }
+        * { box-sizing: border-box; }
+        .card { background: #fff; color: #1d2328; border: 1px solid #cfd6dc; border-radius: 16px; padding: 16px 18px; box-shadow: 0 8px 28px #0003; }
+        .tools { position: fixed; right: 12px; bottom: max(80px, env(safe-area-inset-bottom)); z-index: 2147483647; width: 340px; max-width: calc(100vw - 24px); }
+        .tools p { margin: 0; line-height: 1.5; color: #5b6770; }
+        .tools .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        .tools button { font: inherit; cursor: pointer; padding: 8px 16px; border-radius: 999px; border: 1px solid #cfd6dc; background: transparent; color: #1d2328; transition: background .15s; }
+        .tools button:hover { background: #eef1f4; }
+        .tools button:focus-visible { outline: 2px solid #075a9c; outline-offset: 2px; }
+        .tools .allow-link { background: #1d2328; border-color: #1d2328; color: #fff; }
+        .tools .allow-link:hover { background: #333c44; }
+        button, a { font: inherit; }
+        button { cursor: pointer; padding: 8px; }
+        a { color: #075a9c; padding: 8px; display: inline-block; }
+        @media (prefers-color-scheme: dark) {
+          .card { background: #1c2227; color: #e8ecef; border-color: #323b42; box-shadow: 0 8px 28px #0008; }
+          .tools p { color: #9aa6af; }
+          .tools button { border-color: #323b42; color: #e8ecef; } .tools button:hover { background: #262e34; }
+          .tools .allow-link { background: #e8ecef; border-color: #e8ecef; color: #0f1316; } .tools .allow-link:hover { background: #fff; }
+        }
+        .blocked { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 24px; overflow: auto; color: #1d2328;
+          background: radial-gradient(ellipse at 50% 35%, #fff 0%, #eef1f4 70%); }
+        .hush { max-width: 360px; text-align: center; }
+        .hush svg { width: 72px; height: 72px; color: #6b7882; margin-bottom: 20px; }
+        .hush h1 { margin: 0 0 10px; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+        .hush p { margin: 0 auto; color: #5b6770; line-height: 1.6; }
+        .hush .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+        .hush .pill { padding: 9px 20px; border-radius: 999px; border: 1px solid #cfd6dc; background: transparent; color: #1d2328; text-decoration: none; transition: background .15s; }
+        .hush .pill:hover { background: #fff; }
+        .hush .pill:focus-visible, .hush button:focus-visible { outline: 2px solid #075a9c; outline-offset: 2px; }
+        .hush .primary { background: #1d2328; border-color: #1d2328; color: #fff; }
+        .hush .primary:hover { background: #333c44; }
+        .hush .hint { margin-top: 22px; font-size: 12px; color: #8b97a0; }
+        @media (prefers-color-scheme: dark) {
+          .blocked { color: #e8ecef; background: radial-gradient(ellipse at 50% 35%, #1c2227 0%, #0f1316 70%); }
+          .hush svg { color: #8b97a0; } .hush p { color: #9aa6af; } .hush .hint { color: #6b7882; }
+          .hush .pill { border-color: #323b42; color: #e8ecef; } .hush .pill:hover { background: #1c2227; }
+          .hush .primary { background: #e8ecef; border-color: #e8ecef; color: #0f1316; } .hush .primary:hover { background: #fff; }
+        }
+        @media (prefers-reduced-motion: reduce) { .hush .pill { transition: none; } }
+        [hidden] { display: none !important; }
+      `;
+  }
 })();
 
